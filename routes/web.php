@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/',[DashboardController::class, 'dashboard'])->name('HalamanDashboard');
+Route::get('/halaman_daftar',[DashboardController::class, 'halaman_daftar'])->name('HalamanDaftar');
+// Route::post('/ceklogin',[UserController::class, 'cek_login'])->name('CekLogin');
