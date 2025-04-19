@@ -16,4 +16,4 @@ use App\Http\Controllers\DashboardController;
 
 Route::get('/',[DashboardController::class, 'dashboard'])->name('HalamanDashboard');
 Route::get('/halaman_daftar',[DashboardController::class, 'halaman_daftar'])->name('HalamanDaftar');
-// Route::post('/ceklogin',[UserController::class, 'cek_login'])->name('CekLogin');
+Route::post('/normalisasi_data',[DashboardController::class, 'normalisasi_data'])->name('NormalisasiData');
