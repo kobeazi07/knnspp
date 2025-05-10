@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Pendidikan;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -30,9 +31,7 @@ class DashboardController extends Controller
         $data_pnd_ibu = Pendidikan::find($pnd_ibu);
         $b_pnd_ibu = $data_pnd_ibu ? $data_pnd_ibu->transformasi : null;
         // dd($b_pnd_ibu);
-
         // $b_pnd_ayah = $pnd_ayah->r_pnd_ayah->transformasi;
-        
         $n_s_ayah = $this->NormalisasiSayah($salary_ayah);
         $n_s_ibu = $this->NormalisasiSibu($salary_ibu);
         $n_pnd_ayah = $this->NormalisasiPayah($b_pnd_ayah);
@@ -78,24 +77,61 @@ class DashboardController extends Controller
                 $hasila[] =   $s->salary_ayah;
                 $hasili[] =   $s->salary_ibu;
             }
-           return response()->json([
+        //    return response()->json([
+        //     'n_salary_ayah' => $n_s_ayah,
+        //     'n_salary_ibu' => $n_s_ibu,
+        //     'n_pendidikan_ayah' => $n_pnd_ayah,
+        //     'n_pendidikan_ibu' => $n_pnd_ibu,
+        //     'n_all_salary_ayah' => $hasila,
+        //     'n_all_salary_ibu' => $hasili,
+        //     'n_all_pend_ayah' =>  $hspnd_ayah,
+        //     'n_all_pend_ibu' =>  $hspnd_ibu,
+        //     new PostinganResource($postingan)
+        // ]);
+        // return api json yang proper
+        $data = [
             'n_salary_ayah' => $n_s_ayah,
             'n_salary_ibu' => $n_s_ibu,
             'n_pendidikan_ayah' => $n_pnd_ayah,
             'n_pendidikan_ibu' => $n_pnd_ibu,
             'n_all_salary_ayah' => $hasila,
             'n_all_salary_ibu' => $hasili,
-            'n_all_pend_ayah' =>  $hspnd_ayah,
-            'n_all_pend_ibu' =>  $hspnd_ibu,
-            new PostinganResource($postingan)
-        ]);
-
-
-
+            'n_all_pend_ayah' => $hspnd_ayah,
+            'n_all_pend_ibu' => $hspnd_ibu
+        ];
+        // Storage::put('python/input_data.json', json_encode($data));
+        Storage::put('python/input_data.json', json_encode($data, JSON_PRETTY_PRINT));
+        //    try {
+        //         $response = Http::post('http://127.0.0.1:8000/process', $data);
+        //         $python_result = $response->json();
+        //     } catch (\Exception $e) {
+        //         return response()->json(['error' => 'Gagal koneksi ke Python API', 'message' => $e->getMessage()]);
+        //     }
+        //     return response()->json([
+        //         'php_data' => $data,
+        //         'python_result' => $python_result
+        //     ]);
+        // dd($data);
+        
+        // $response = Http::get('http://127.0.0.1:5000/process', $data);
+        
+        // return response()->json([
+        //     'status' => 'success',
+        //     'message' => 'Data berhasil dinormalisasi',
+        //     'data' => [
+        //         'n_salary_ayah' => $n_s_ayah,
+        //         'n_salary_ibu' => $n_s_ibu,
+        //         'n_pendidikan_ayah' => $n_pnd_ayah,
+        //         'n_pendidikan_ibu' => $n_pnd_ibu,
+        //         'n_all_salary_ayah' => $hasila,
+        //         'n_all_salary_ibu' => $hasili,
+        //         'n_all_pend_ayah' => $hspnd_ayah,
+        //         'n_all_pend_ibu' => $hspnd_ibu
+        //         ]
+        //     ], 200);
+        // Kirim ke Python service (ubah URL sesuai Python Flask / FastAPI kamu)
+            // $path = Storage::path('python\diagnose.py');
         // dd($n_pnd_ibu);
-
-
-
         // $n_s_ayah
         
     }
@@ -156,7 +192,7 @@ class DashboardController extends Controller
             } else {
                 $pnd_ayah = '-'; // atau bisa juga null atau "Tidak diketahui"
             }
-        // echo "ID Siswa: {$data->id} - Transformasi Ayah: {$pnd_ayah}<br>";
+            // echo "ID Siswa: {$data->id} - Transformasi Ayah: {$pnd_ayah}<br>";
             // $hasil[] = [
             //     $pnd_ayah
             //     // 'id' => $data->id,
