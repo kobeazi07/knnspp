@@ -6,16 +6,12 @@ use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class DashboardController extends Controller
+class MutualInformationController extends Controller
 {
-    public function dashboard(){
-        return view('pages.dashboard');
-    }
-
     public function halaman_daftar(){
         $pendidikan = Pendidikan::get();
         $pendidikans = Pendidikan::get();
-        return view('pages.daftarsiswa',compact('pendidikan','pendidikans'));
+        return view('pages.daftarsiswami',compact('pendidikan','pendidikans'));
     }
 
     public function normalisasi_data(Request $request){
@@ -101,7 +97,7 @@ class DashboardController extends Controller
         ];
         // dd($data);
         // Storage::put('python/input_data.json', json_encode($data));
-        Storage::put('python/input_data.json', json_encode($data, JSON_PRETTY_PRINT));
+        Storage::put('python/input_datami.json', json_encode($data, JSON_PRETTY_PRINT));
         //    try {
         //         $response = Http::post('http://127.0.0.1:8000/process', $data);
         //         $python_result = $response->json();

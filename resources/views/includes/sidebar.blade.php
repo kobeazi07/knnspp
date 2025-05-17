@@ -27,6 +27,11 @@
         <i class="fas fa-fw fa-table"></i>
         <span>Daftar</span></a>
 </li>
+<li class="nav-item">
+    <a class="nav-link" href="{{route('HalamanDaftarMI')}}">
+        <i class="fas fa-fw fa-table"></i>
+        <span>Mutual Information</span></a>
+</li>
 
 <!-- Divider -->
 <hr class="sidebar-divider d-none d-md-block">
