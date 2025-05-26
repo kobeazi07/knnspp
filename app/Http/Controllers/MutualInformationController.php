@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\Pendidikan;
 use App\Models\Siswa;
+use App\Models\R_Pembayaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -36,6 +37,8 @@ class MutualInformationController extends Controller
         $siswall = Siswa::all();
         $siswapp = Siswa::with('r_pnd_ayah')->get();
         foreach ($siswapp as $data) {
+            // dd($data);
+
             if ($data->r_pnd_ayah) {
                 $pnd_ayah = $data->r_pnd_ayah->transformasi;
                 $pnd_ibu = $data->r_pnd_ibu->transformasi;
@@ -45,9 +48,11 @@ class MutualInformationController extends Controller
                 $pnd_ayah = '-'; // atau bisa juga null atau "Tidak diketahui"
             }
             $hpnd_ayah[] = $pnd_ayah;
-            $hpnd_ibu[] = $pnd_ibu;        
-            
+            $hpnd_ibu[] = $pnd_ibu;  
+            $nama_siswa[] =  $data->nama;
+            $id_siswa[] =  $data->id;      
         }
+        //   dd($id_siswa)
         $minayah = min($hpnd_ayah);
         $maxayah = max($hpnd_ayah);
         $minibu = min($hpnd_ibu);
@@ -64,8 +69,9 @@ class MutualInformationController extends Controller
                     $hspnd_ibu[] = $spnd_ibu;
                 }
                 //    dd($hspnd_ibu);
-                // dd($siswall);
+        
                 foreach ($siswall as $s) {
+                           
                     $s->salary_ayah = $this->minMaxNormalization($s->salary_ayah);
                 $s->salary_ibu = $this->minMaxNormalization($s->salary_ibu);
             
@@ -93,11 +99,86 @@ class MutualInformationController extends Controller
             'n_all_salary_ayah' => $hasila,
             'n_all_salary_ibu' => $hasili,
             'n_all_pend_ayah' => $hspnd_ayah,
-            'n_all_pend_ibu' => $hspnd_ibu
+            'n_all_pend_ibu' => $hspnd_ibu,
+            'nama_siswa' =>  $nama_siswa,
+            'id_siswa' =>  $id_siswa,
         ];
         // dd($data);
         // Storage::put('python/input_data.json', json_encode($data));
         Storage::put('python/input_datami.json', json_encode($data, JSON_PRETTY_PRINT));
+         // Contoh path ke script Python kamu
+       $pythonScript = base_path('storage/app/python/mutual_information.py');
+        $pythonScript = str_replace('\\', '/', $pythonScript);  // ganti backslash ke slash biar aman
+
+        $output = [];
+        $return_var = 0;
+
+        // Jalankan Python, tangkap output dan kode return
+        exec("python \"$pythonScript\" 2>&1", $output, $return_var);
+
+        if ($return_var !== 0) {
+            // Kalau error, tampilkan pesan dan output
+            dd('Error saat menjalankan Python:', $output, $return_var);
+        }
+
+        // Gabungkan output baris menjadi satu string JSON
+        $jsonOutput = implode("", $output);
+
+        // Decode JSON ke array PHP
+        $nearestNeighbors = json_decode($jsonOutput, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            dd('Error decode JSON:', json_last_error_msg(), $jsonOutput);
+        }
+        $ids = array_column($nearestNeighbors, 'id');
+        $pembayaran = R_Pembayaran::whereIn('siswa_id', $ids)->get();
+        // dd($pembayaran);
+        // Hitung jumlah status
+        $tepatWaktu = $pembayaran->where('status_pembayaran', 'tepat waktu')->count();
+        $terlambat  = $pembayaran->count() - $tepatWaktu; // sisanya dianggap terlambat
+        // dd($tepatWaktu);
+        // Tentukan hasil
+        $statusPotensi = $tepatWaktu > $terlambat ? 'Tidak berpotensi terlambat' : 'Berpotensi terlambat';
+        // dd($statusPotensi);
+        return response()->json([
+        'potensi' => $statusPotensi,    
+        ]);
+        // Simpan dalam flash session
+    //     $hasilJson = [
+    //     'total_data' => 5,
+    //     'tepat_waktu' => 3,
+    //     'terlambat' => 2,
+    //     'potensi' => 'Tidak berpotensi terlambat',
+    // ];
+
+    // return redirect()->back()->with('hasil_json', $hasilJson);
+        // // Contoh output untuk cek
+        // return response()->json([
+        //     'total_data' => $pembayaran->count(),
+        //     'tepat_waktu' => $tepatWaktu,
+        //     'terlambat' => $terlambat,
+        //     'potensi' => $statusPotensi,
+        // ]);
+        
+    // Contoh: dump data nearest neighbors untuk cek
+        // $output = [];
+        // $return_var = 0;
+        // exec('python3 ' . base_path('python/mutual_information.py'), $output, $return_var);
+
+        // $json_output = implode("", $output); // gabungkan output Python
+        // $nearest_neighbors = json_decode($json_output, true);
+
+        // if ($nearest_neighbors === null) {
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => 'Gagal menguraikan hasil dari Python.',
+        //         'raw_output' => $json_output
+        //     ]);
+        // }
+
+        // return response()->json([
+        //     'status' => 'success',
+        //     'nearest_neighbors' => $nearest_neighbors
+        // ]);
         //    try {
         //         $response = Http::post('http://127.0.0.1:8000/process', $data);
         //         $python_result = $response->json();
