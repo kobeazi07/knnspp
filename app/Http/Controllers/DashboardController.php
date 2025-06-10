@@ -5,6 +5,7 @@ use App\Models\Pendidikan;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\R_Pembayaran;
 
 class DashboardController extends Controller
 {
@@ -49,7 +50,9 @@ class DashboardController extends Controller
                 $pnd_ayah = '-'; // atau bisa juga null atau "Tidak diketahui"
             }
             $hpnd_ayah[] = $pnd_ayah;
-            $hpnd_ibu[] = $pnd_ibu;        
+            $hpnd_ibu[] = $pnd_ibu;   
+            $nama_siswa[] =  $data->nama;
+            $id_siswa[] =  $data->id;      
             
         }
         $minayah = min($hpnd_ayah);
@@ -97,11 +100,50 @@ class DashboardController extends Controller
             'n_all_salary_ayah' => $hasila,
             'n_all_salary_ibu' => $hasili,
             'n_all_pend_ayah' => $hspnd_ayah,
-            'n_all_pend_ibu' => $hspnd_ibu
+            'n_all_pend_ibu' => $hspnd_ibu,
+            'nama_siswa' =>  $nama_siswa,
+            'id_siswa' =>  $id_siswa,
         ];
         // dd($data);
         // Storage::put('python/input_data.json', json_encode($data));
         Storage::put('python/input_data.json', json_encode($data, JSON_PRETTY_PRINT));
+        // proses setelah pythion
+        $pythonScript = base_path('storage/app/python/feature_selection.py');
+        $pythonScript = str_replace('\\', '/', $pythonScript);  // ganti backslash ke slash biar aman
+        
+        $output = [];
+        $return_var = 0;
+        
+        // Jalankan Python, tangkap output dan kode return
+        exec("python \"$pythonScript\" 2>&1", $output, $return_var);
+        // dd($output);
+
+        if ($return_var !== 0) {
+            // Kalau error, tampilkan pesan dan output
+            dd('Error saat menjalankan Python:', $output, $return_var);
+        }
+
+        // Gabungkan output baris menjadi satu string JSON
+        $jsonOutput = implode("", $output);
+
+        // Decode JSON ke array PHP
+        $nearestNeighbors = json_decode($jsonOutput, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            dd('Error decode JSON:', json_last_error_msg(), $jsonOutput);
+        }
+        $ids = array_column($nearestNeighbors, 'id');
+        $pembayaran = R_Pembayaran::whereIn('siswa_id', $ids)->get();
+        // dd($pembayaran);
+        // Hitung jumlah status
+        $tepatWaktu = $pembayaran->where('status_pembayaran', 'tepat waktu')->count();
+        $terlambat  = $pembayaran->count() - $tepatWaktu; // sisanya dianggap terlambat
+        // dd($tepatWaktu);
+        // Tentukan hasil
+        $statusPotensi = $tepatWaktu > $terlambat ? 'Tidak berpotensi terlambat' : 'Berpotensi terlambat';
+        // dd($statusPotensi);
+        return response()->json([
+        'potensi' => $statusPotensi,    
+        ]);
         //    try {
         //         $response = Http::post('http://127.0.0.1:8000/process', $data);
         //         $python_result = $response->json();

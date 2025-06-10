@@ -5,11 +5,11 @@
 
 <!-- Page Heading -->
 <div class="row align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+    <h1 class="h3 mb-0 text-gray-800">Forward Selection</h1>
 
 
     <div class="container-fluid bg-white">
-        <form action="{{route('NormalisasiData')}}"  method="POST"  enctype="multipart/form-data">
+        <form id="form-daftar" action="{{route('NormalisasiData')}}"  method="POST"  enctype="multipart/form-data">
                     <!-- <form class="user"> -->
                     @csrf
                     <div class="form-group row">
@@ -82,35 +82,30 @@ document.getElementById('form-daftar').addEventListener('submit', function (e) {
     e.preventDefault();
 
     const formData = new FormData(this);
-
-    axios.post('/api/terima-form', formData)
+    
+    axios.post("{{ route('NormalisasiData') }}", formData)
         .then(response => {
-            alert('Data berhasil dikirim ke API!');
-            console.log(response.data);
+            const data = response.data;
+            console.log('hasil_data',data);
+            let output = `
+                <div class="alert alert-info mt-3">
+                    <h5>Hasil Analisis:</h5>
+                    <ul>
+                        <li><strong>Potensi:</strong> ${data.potensi}</li>
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('hasil-json').innerHTML = output;
         })
         .catch(error => {
-            alert('Gagal mengirim data.');
             console.error(error);
         });
 });
 </script>
+<div id="hasil-json"></div>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-document.getElementById('form-daftar').addEventListener('submit', function (e) {
-    e.preventDefault();
 
-    const formData = new FormData(this);
 
-    axios.post('/api/terima-form', formData)
-        .then(response => {
-            alert('Data berhasil dikirim ke API!');
-            console.log(response.data);
-        })
-        .catch(error => {
-            alert('Gagal mengirim data.');
-            console.error(error);
-        });
-});
-</script>
 
 @endsection
